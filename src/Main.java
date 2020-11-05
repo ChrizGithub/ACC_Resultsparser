@@ -10,49 +10,27 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import javax.swing.JFrame;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.sun.deploy.uitoolkit.impl.fx.ui.FXUIFactory;
+
 import javafx.stage.DirectoryChooser;
 
 
 public class Main {
 
-	private JFrame frame;
-
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					Main window = new Main();
-					window.frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
-
-	/**
-	 * Create the application.
-	 */
-	public Main() {
-		initialize();
-	}
+	private static JFrame frame;
 
 	/**
 	 * Initialize the contents of the frame.
 	 */
-	private void initialize() {
+	public static void main(String[] args) throws IOException {
 		frame = new JFrame();
-		frame.setBounds(100, 100, 450, 300);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		FileDialog fd = new FileDialog(frame);
 		fd.setVisible(true);
@@ -61,59 +39,55 @@ public class Main {
 		String fullPath = fd.getDirectory() + fd.getFile();
 		
 		File file = new File(fullPath);
-		frame.dispose();
+		
+		if (!file.exists()) {
+			file.createNewFile();
+		}
+		
+		String fileName = fd.getFile().replace(".json", "_RESULTS");
 		
 		JSONParser parser = new JSONParser();
 		
-		try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_16)){
-			
-			JSONObject mainObject = new JSONObject();
-			JSONObject sessionResult = new JSONObject();
-			JSONArray leaderBoardLines = new JSONArray();
-			JSONObject test = new JSONObject();
-
-			mainObject = (JSONObject) parser.parse(reader);
-			sessionResult = (JSONObject) mainObject.get("sessionResult");
-			leaderBoardLines = (JSONArray) sessionResult.get("leaderBoardLines");
-			
-			File outputFile = new File(path + "Output.txt");
-			
-			FileWriter fileWriter = new FileWriter(outputFile);
-			
-			for (int i = 0; i <= leaderBoardLines.size() - 1; i++) {
+		if (path != null && fullPath.contains(".json")) {
+			try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_16)){
+				JSONObject test = new JSONObject();
+	
+				JSONObject mainObject = (JSONObject) parser.parse(reader);
+				JSONObject sessionResult = (JSONObject) mainObject.get("sessionResult");
+				JSONArray leaderBoardLines = (JSONArray) sessionResult.get("leaderBoardLines");
 				
-				JSONObject carObject = new JSONObject();
-				JSONArray array = new JSONArray();
-
-				test = (JSONObject) leaderBoardLines.get(i);
-				carObject = (JSONObject) test.get("car");
-				array = (JSONArray) carObject.get("drivers");
+				File outputFile = new File(path + fileName + ".txt");
 				
-				JSONArray outArray = new JSONArray();
-				outArray.add(array.get(0));
+				FileWriter fileWriter = new FileWriter(outputFile);
 				
-				try {
-					fileWriter.write(i+1 + ". " + outArray.toString() + "\n\n");
-					fileWriter.flush();
-				} catch (Exception e) {
-					// TODO: handle exception
+				for (int i = 0; i <= leaderBoardLines.size() - 1; i++) {
+					
+					JSONObject carObject = new JSONObject();
+					JSONArray array = new JSONArray();
+	
+					test = (JSONObject) leaderBoardLines.get(i);
+					carObject = (JSONObject) test.get("car");
+					array = (JSONArray) carObject.get("drivers");
+					
+					JSONArray outArray = new JSONArray();
+					outArray.add(array.get(0));
+					
+					try {
+						fileWriter.write(i+1 + ". " + outArray.toString() + "\n\n");
+						fileWriter.flush();
+					} catch (Exception e) {
+						// TODO: handle exception
+					}
 				}
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (ParseException e) {
+				e.printStackTrace();
 			}
-			
-			
-//			JSONObject testObject = new JSONObject();
-//			testObject = (JSONObject) array.get(1);
-//			
-//			System.out.println(testObject);
-//			
-//			
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ParseException e) {
-			e.printStackTrace();
+		
 		}
-		
-		
+		System.exit(0);
 	}
 
 }
